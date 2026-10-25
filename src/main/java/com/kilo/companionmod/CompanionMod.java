@@ -1,5 +1,6 @@
 package com.kilo.companionmod;
 
+import com.kilo.companionmod.client.ModEntityRenderers;
 import com.kilo.companionmod.config.ModConfig;
 import com.kilo.companionmod.entity.CompanionEntity;
 import com.kilo.companionmod.event.CompanionEvents;

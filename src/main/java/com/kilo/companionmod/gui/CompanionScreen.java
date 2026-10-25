@@ -1,16 +1,12 @@
 package com.kilo.companionmod.gui;
 
-import com.kilo.companionmod.CompanionMod;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 
 public class CompanionScreen extends Screen {
-    private static final ResourceLocation BACKGROUND = new ResourceLocation(CompanionMod.MOD_ID, "textures/gui/companion_gui.png");
-
     public CompanionScreen(Component title) {
         super(title);
     }
@@ -66,7 +62,6 @@ public class CompanionScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 80, 0xFFFFFF);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }

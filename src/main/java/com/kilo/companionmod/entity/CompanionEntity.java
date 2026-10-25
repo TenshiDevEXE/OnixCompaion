@@ -334,6 +334,7 @@ public class CompanionEntity extends PathfinderMob {
     }
 
     private int getFoodHealAmount(ItemStack stack) {
+        if (stack.getItem().getFoodProperties() == null) return 0;
         return stack.getItem().getFoodProperties().getNutrition() * 2;
     }
 
