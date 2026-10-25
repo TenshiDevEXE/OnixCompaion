@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "companionmod:item/companion_spawn_egg"
+    "layer0": "onixcompanion:item/companion_spawn_egg"
   }
 }

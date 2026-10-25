@@ -9,7 +9,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle'
 
-version = '1.0.5'
+version = '1.0.6'
 group = 'com.kilo.onixcompanion'
 
 java {
