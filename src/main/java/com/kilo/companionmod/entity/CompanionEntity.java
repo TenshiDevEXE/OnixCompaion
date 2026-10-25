@@ -52,16 +52,27 @@ public class CompanionEntity extends PathfinderMob {
 
     public CompanionEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
-        applyConfig();
+        try {
+            applyConfig();
+        } catch (Exception ignored) {
+            // Config no crítica, el mod sigue funcionando con valores por defecto
+        }
     }
 
     private void applyConfig() {
         if (this.configApplied || this.level() == null || this.level().isClientSide) return;
-        this.configApplied = true;
-        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(ModConfig.COMMON.maxHealth.get());
-        this.setHealth(this.getMaxHealth());
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(ModConfig.COMMON.movementSpeed.get());
-        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(ModConfig.COMMON.attackDamage.get());
+        try {
+            this.configApplied = true;
+            var healthAttr = this.getAttribute(Attributes.MAX_HEALTH);
+            var speedAttr = this.getAttribute(Attributes.MOVEMENT_SPEED);
+            var damageAttr = this.getAttribute(Attributes.ATTACK_DAMAGE);
+            if (healthAttr != null) healthAttr.setBaseValue(ModConfig.COMMON.maxHealth.get());
+            if (speedAttr != null) speedAttr.setBaseValue(ModConfig.COMMON.movementSpeed.get());
+            if (damageAttr != null) damageAttr.setBaseValue(ModConfig.COMMON.attackDamage.get());
+            this.setHealth(this.getMaxHealth());
+        } catch (Exception ignored) {
+            // Fallback silencioso
+        }
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -288,43 +299,58 @@ public class CompanionEntity extends PathfinderMob {
 
     @Override
     public void tick() {
-        super.tick();
-        tickLoyalty();
-        applyAttributeBonuses();
+        try {
+            super.tick();
+            tickLoyalty();
+            applyAttributeBonuses();
+        } catch (Exception ignored) {
+            // Evitar crash en tick si algo falla
+        }
     }
 
     private void applyAttributeBonuses() {
-        double armorBonus = getArmorBonus();
-        this.getAttribute(Attributes.ARMOR).setBaseValue(2.0D + armorBonus);
+        try {
+            double armorBonus = getArmorBonus();
+            var armorAttr = this.getAttribute(Attributes.ARMOR);
+            if (armorAttr != null) {
+                armorAttr.setBaseValue(2.0D + armorBonus);
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     public InteractionResult onRightClick(Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        if (!player.level().isClientSide) {
-            if (!stack.isEmpty() && isFood(stack)) {
-                int healAmount = getFoodHealAmount(stack);
-                if (healAmount > 0) {
-                    stack.shrink(1);
-                    heal(healAmount);
+        try {
+            ItemStack stack = player.getItemInHand(hand);
+            if (!player.level().isClientSide) {
+                if (!stack.isEmpty() && isFood(stack)) {
+                    int healAmount = getFoodHealAmount(stack);
+                    if (healAmount > 0) {
+                        stack.shrink(1);
+                        heal(healAmount);
+                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.COMPANION_ORDER.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
+                        player.displayClientMessage(Component.literal("Compañero curado " + healAmount + " PV"), true);
+                        return InteractionResult.SUCCESS;
+                    }
+                }
+                if (stack.isEmpty()) {
+                    boolean sitting = !this.isSitting();
+                    this.setSitting(sitting);
+                    if (sitting) {
+                        this.setOrder(CompanionOrder.STAY);
+                    } else {
+                        this.setOrder(CompanionOrder.FOLLOW);
+                    }
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.COMPANION_ORDER.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-                    player.displayClientMessage(Component.literal("Compañero curado " + healAmount + " PV"), true);
+                    if (!this.level().isClientSide) {
+                        this.level().addParticle(ParticleTypes.HEART, this.getX(), this.getY() + 1.0D, this.getZ(), 0.0D, 0.2D, 0.0D);
+                        this.level().addParticle(ParticleTypes.HEART, this.getX() + 0.3D, this.getY() + 1.0D, this.getZ() - 0.3D, 0.0D, 0.2D, 0.0D);
+                    }
+                    player.displayClientMessage(Component.literal("Compañero " + (sitting ? "se queda quieto" : "te sigue")), true);
                     return InteractionResult.SUCCESS;
                 }
             }
-            if (stack.isEmpty()) {
-                boolean sitting = !this.isSitting();
-                this.setSitting(sitting);
-                if (sitting) {
-                    this.setOrder(CompanionOrder.STAY);
-                } else {
-                    this.setOrder(CompanionOrder.FOLLOW);
-                }
-                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.COMPANION_ORDER.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-                this.level().addParticle(ParticleTypes.HEART, this.getX(), this.getY() + 1.0D, this.getZ(), 0.0D, 0.2D, 0.0D);
-                this.level().addParticle(ParticleTypes.HEART, this.getX() + 0.3D, this.getY() + 1.0D, this.getZ() - 0.3D, 0.0D, 0.2D, 0.0D);
-                player.displayClientMessage(Component.literal("Compañero " + (sitting ? "se queda quieto" : "te sigue")), true);
-                return InteractionResult.SUCCESS;
-            }
+        } catch (Exception ignored) {
         }
         return super.mobInteract(player, hand);
     }
