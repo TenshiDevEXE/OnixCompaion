@@ -40,6 +40,12 @@ public class ModItems {
         }
 
         @Override
+        public EntityType<?> getDefaultType() {
+            EntityType<?> type = entityTypeSupplier.get();
+            return type != null ? type : EntityType.PLAYER;
+        }
+
+        @Override
         public EntityType<?> getType(CompoundTag tag) {
             EntityType<?> type = entityTypeSupplier.get();
             return type != null ? type : super.getType(tag);
