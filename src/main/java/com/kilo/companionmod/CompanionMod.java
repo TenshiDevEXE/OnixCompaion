@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 
 @Mod(CompanionMod.MOD_ID)
 public class CompanionMod {
-    public static final String MOD_ID = "companionmod";
+    public static final String MOD_ID = "onixcompanion";
     public static final Logger LOGGER = LogManager.getLogger();
 
     public CompanionMod() {

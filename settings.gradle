@@ -6,4 +6,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'companion-mod'
+rootProject.name = 'onixcompanion'

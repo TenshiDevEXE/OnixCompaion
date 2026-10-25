@@ -9,8 +9,8 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle'
 
-version = '1.0.4'
-group = 'com.kilo.companionmod'
+version = '1.0.5'
+group = 'com.kilo.onixcompanion'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
