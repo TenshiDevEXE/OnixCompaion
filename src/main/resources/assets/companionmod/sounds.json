@@ -1,0 +1,22 @@
+{
+  "companion_click": {
+    "sounds": [
+      "companion_click"
+    ]
+  },
+  "companion_order": {
+    "sounds": [
+      "companion_order"
+    ]
+  },
+  "companion_error": {
+    "sounds": [
+      "companion_error"
+    ]
+  },
+  "companion_death": {
+    "sounds": [
+      "companion_death"
+    ]
+  }
+}
