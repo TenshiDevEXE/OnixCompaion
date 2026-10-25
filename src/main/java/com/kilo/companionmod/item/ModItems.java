@@ -16,7 +16,14 @@ public class ModItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, CompanionMod.MOD_ID);
 
     public static final RegistryObject<Item> COMPANION_SPAWN_EGG = ITEMS.register("companion_spawn_egg",
-        () -> new SpawnEggItem(ModEntities.COMPANION.get(), 0xFFFFFF, 0xFFFFFF, new Item.Properties())
+        () -> {
+            try {
+                return new SpawnEggItem(ModEntities.COMPANION.get(), 0xFFFFFF, 0xFFFFFF, new Item.Properties());
+            } catch (Throwable t) {
+                CompanionMod.LOGGER.warn("No se pudo crear el spawn egg del compañero: entity type no disponible", t);
+                return new Item(new Item.Properties());
+            }
+        }
     );
 
     public static void register(IEventBus eventBus) {
