@@ -5,10 +5,10 @@ issueTrackerURL=""
 
 [[mods]]
 modId="onixcompanion"
-version="0.0.8"
+version="2.0.0"
 displayName="Onix Companion"
 description='''
-Un compañero NPC para Forge 1.20.1 que sigue órdenes del jugador.
+Un compañero NPC persistente para Forge 1.20.1 con órdenes de combate, habilidades, machine learning adaptativo, inventario y más.
 '''
 authors="Kilo"
 

@@ -380,8 +380,8 @@ public class CompanionEntity extends PathfinderMob {
             tag.putInt("HomeZ", this.homePosition.getZ());
             tag.putInt("HomeRadius", this.homeRadius);
         }
-        this.skills.writeToNBT(tag);
-        this.brain.writeToNBT(tag);
+        tag.put("Skills", this.skills.saveToTag());
+        tag.put("Brain", this.brain.saveToTag());
 
         CompoundTag invTag = new CompoundTag();
         for (int i = 0; i < this.inventory.length; i++) {
@@ -430,8 +430,8 @@ public class CompanionEntity extends PathfinderMob {
                 this.homeRadius = tag.getInt("HomeRadius");
             }
         }
-        this.skills.readFromNBT(tag);
-        this.brain.readFromNBT(tag);
+        if (tag.contains("Skills")) this.skills.loadFromTag(tag.getCompound("Skills"));
+        if (tag.contains("Brain")) this.brain.loadFromTag(tag.getCompound("Brain"));
 
         if (tag.contains("Inventory")) {
             CompoundTag invTag = tag.getCompound("Inventory");

@@ -1,181 +1,96 @@
 package com.kilo.companionmod.skills;
 
-import com.kilo.companionmod.config.ModConfig;
+import com.kilo.companionmod.CompanionMod;
 import net.minecraft.nbt.CompoundTag;
-
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 
 public class CompanionSkills {
-    public enum Category {
-        COMBAT("combat"),
-        MINING("mining"),
-        SURVIVAL("survival"),
-        COLLECTION("collection");
-
-        private final String key;
-
-        Category(String key) {
-            this.key = key;
-        }
-
-        public String getKey() {
-            return key;
-        }
-    }
-
-    public enum Skill {
-        COMBAT_POWER(Category.COMBAT, "combat_power"),
-        COMBAT_REFLEXES(Category.COMBAT, "combat_reflexes"),
-        MINING_SPEED(Category.MINING, "mining_speed"),
-        MINING_LOOT(Category.MINING, "mining_loot"),
-        SURVIVAL_ARMOR(Category.SURVIVAL, "survival_armor"),
-        SURVIVAL_BREATH(Category.SURVIVAL, "survival_breath"),
-        COLLECTION_RANGE(Category.COLLECTION, "collection_range"),
-        COLLECTION_SPEED(Category.COLLECTION, "collection_speed");
-
-        private final Category category;
-        private final String key;
-
-        Skill(Category category, String key) {
-            this.category = category;
-            this.key = key;
-        }
-
-        public Category getCategory() {
-            return category;
-        }
-
-        public String getKey() {
-            return key;
-        }
-    }
-
-    private final Map<Category, Integer> levels = new HashMap<>();
-    private final Map<Category, Integer> xp = new HashMap<>();
-    private final Map<Skill, Integer> skillLevels = new HashMap<>();
+    private final Map<CompanionSkillType, CompanionSkill> skills = new EnumMap<>(CompanionSkillType.class);
 
     public CompanionSkills() {
-        for (Category cat : Category.values()) {
-            levels.put(cat, 1);
-            xp.put(cat, 0);
-        }
-        for (Skill skill : Skill.values()) {
-            skillLevels.put(skill, 1);
+        for (CompanionSkillType type : CompanionSkillType.values()) {
+            skills.put(type, new CompanionSkill(type));
         }
     }
 
-    public int getLevel(Category category) {
-        return levels.getOrDefault(category, 1);
+    public CompanionSkill getSkill(CompanionSkillType type) {
+        return skills.get(type);
     }
 
-    public int getXP(Category category) {
-        return xp.getOrDefault(category, 0);
+    public int getLevel(CompanionSkillType type) {
+        CompanionSkill skill = skills.get(type);
+        return skill != null ? skill.getLevel() : 1;
     }
 
-    public int getSkillLevel(Skill skill) {
-        return skillLevels.getOrDefault(skill, 1);
-    }
-
-    public void addXP(Category category, int amount) {
-        if (amount <= 0) return;
-        int cap = ModConfig.COMMON.skillLevelCap.get();
-        int currentLevel = getLevel(category);
-        if (currentLevel >= cap) return;
-
-        int newXP = getXP(category) + amount;
-        int xpNeeded = xpForNextLevel(currentLevel);
-
-        while (newXP >= xpNeeded && currentLevel < cap) {
-            newXP -= xpNeeded;
-            currentLevel++;
-            levels.put(category, currentLevel);
-            updateSkillLevels(category, currentLevel);
-            xpNeeded = xpForNextLevel(currentLevel);
-        }
-        xp.put(category, newXP);
-    }
-
-    private void updateSkillLevels(Category category, int newLevel) {
-        for (Skill skill : Skill.values()) {
-            if (skill.getCategory() == category) {
-                int targetLevel = 1 + (newLevel - 1) / 10;
-                if (targetLevel > 5) targetLevel = 5;
-                skillLevels.put(skill, targetLevel);
-            }
+    public void addExperience(CompanionSkillType type, long amount) {
+        CompanionSkill skill = skills.get(type);
+        if (skill != null) {
+            skill.addExperience(amount);
+            CompanionMod.LOGGER.debug("Companion {} skill gained {} XP", type.displayName, amount);
         }
     }
 
-    private int xpForNextLevel(int currentLevel) {
-        return (int) (100 * Math.pow(1.5, currentLevel - 1));
+    public float getProgress(CompanionSkillType type) {
+        CompanionSkill skill = skills.get(type);
+        return skill != null ? skill.getProgress() : 0.0F;
     }
 
-    public double getCombatDamageBonus() {
-        int level = getSkillLevel(Skill.COMBAT_POWER);
-        return 1.0D + (level - 1) * 0.15D;
+    public int getTotalLevel() {
+        return skills.values().stream().mapToInt(CompanionSkill::getLevel).sum();
     }
 
-    public double getMovementSpeedBonus() {
-        int level = getSkillLevel(Skill.COMBAT_REFLEXES);
-        return 1.0D + (level - 1) * 0.05D;
+    public float getMovementSpeedBonus() {
+        return 1.0F + (getLevel(CompanionSkillType.EXPLORATION) - 1) * 0.02F;
     }
 
-    public double getMiningSpeedBonus() {
-        int level = getSkillLevel(Skill.MINING_SPEED);
-        return 1.0D + (level - 1) * 0.2D;
+    public float getCombatDamageBonus() {
+        return 1.0F + (getLevel(CompanionSkillType.COMBAT) - 1) * 0.05F;
+    }
+
+    public float getMiningSpeedBonus() {
+        return 1.0F + (getLevel(CompanionSkillType.MINING) - 1) * 0.03F;
     }
 
     public int getExtraMiningLoot() {
-        int level = getSkillLevel(Skill.MINING_LOOT);
-        return level - 1;
+        return Math.max(0, (getLevel(CompanionSkillType.MINING) - 1) / 5);
     }
 
-    public double getArmorBonus() {
-        int level = getSkillLevel(Skill.SURVIVAL_ARMOR);
-        return (level - 1) * 2.0D;
+    public float getArmorBonus() {
+        return (getLevel(CompanionSkillType.TANKING) - 1) * 0.5F;
     }
 
     public int getUnderwaterBreathTicks() {
-        int level = getSkillLevel(Skill.SURVIVAL_BREATH);
-        return 100 + (level - 1) * 100;
+        return 300 + (getLevel(CompanionSkillType.SURVIVAL) - 1) * 50;
     }
 
     public double getCollectionRangeBonus() {
-        int level = getSkillLevel(Skill.COLLECTION_RANGE);
-        return 1.0D + (level - 1) * 0.5D;
+        return 1.0D + (getLevel(CompanionSkillType.GATHERING) - 1) * 0.1D;
     }
 
     public int getCollectionSpeed() {
-        int level = getSkillLevel(Skill.COLLECTION_SPEED);
-        return level;
+        return 1 + (getLevel(CompanionSkillType.GATHERING) - 1) / 3;
     }
 
-    public void readFromNBT(CompoundTag tag) {
-        for (Category cat : Category.values()) {
-            String prefix = cat.getKey();
-            if (tag.contains(prefix + "Level")) {
-                levels.put(cat, tag.getInt(prefix + "Level"));
-            }
-            if (tag.contains(prefix + "XP")) {
-                xp.put(cat, tag.getInt(prefix + "XP"));
-            }
+    public CompoundTag saveToTag() {
+        CompoundTag tag = new CompoundTag();
+        CompoundTag skillsTag = new CompoundTag();
+        for (Map.Entry<CompanionSkillType, CompanionSkill> entry : skills.entrySet()) {
+            skillsTag.put(entry.getKey().name(), entry.getValue().saveToTag());
         }
-        for (Skill skill : Skill.values()) {
-            String key = skill.getKey();
-            if (tag.contains(key + "Level")) {
-                skillLevels.put(skill, tag.getInt(key + "Level"));
-            }
-        }
+        tag.put("Skills", skillsTag);
+        return tag;
     }
 
-    public void writeToNBT(CompoundTag tag) {
-        for (Category cat : Category.values()) {
-            String prefix = cat.getKey();
-            tag.putInt(prefix + "Level", levels.getOrDefault(cat, 1));
-            tag.putInt(prefix + "XP", xp.getOrDefault(cat, 0));
-        }
-        for (Skill skill : Skill.values()) {
-            tag.putInt(skill.getKey() + "Level", skillLevels.getOrDefault(skill, 1));
+    public void loadFromTag(CompoundTag tag) {
+        for (String key : tag.getAllKeys()) {
+            try {
+                CompanionSkillType type = CompanionSkillType.valueOf(key);
+                CompanionSkill skill = CompanionSkill.loadFromTag(tag.getCompound(key));
+                skills.put(type, skill);
+            } catch (IllegalArgumentException e) {
+                CompanionMod.LOGGER.warn("Unknown skill type: {}", key);
+            }
         }
     }
 }
