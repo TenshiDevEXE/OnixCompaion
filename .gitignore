@@ -21,3 +21,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Carpeta de repo duplicada (no incluir)
+OrixCompanion/
