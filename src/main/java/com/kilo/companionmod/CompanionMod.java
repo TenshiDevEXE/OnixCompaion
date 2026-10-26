@@ -7,14 +7,12 @@ import com.kilo.companionmod.event.CompanionEvents;
 import com.kilo.companionmod.item.ModItems;
 import com.kilo.companionmod.network.ModNetwork;
 import com.kilo.companionmod.sound.ModSounds;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.Mod;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,30 +21,19 @@ public class CompanionMod {
     public static final String MOD_ID = "onixcompanion";
     public static final Logger LOGGER = LogManager.getLogger();
 
-    public CompanionMod() {
+    public CompanionMod(IEventBus modEventBus) {
         try {
-            IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
             ModEntities.ENTITIES.register(modEventBus);
             ModItems.ITEMS.register(modEventBus);
             ModSounds.SOUND_EVENTS.register(modEventBus);
-            ModConfig.register();
-            ModNetwork.register();
-            modEventBus.addListener(this::commonSetup);
+            ModConfig.register(modEventBus);
+            ModNetwork.register(modEventBus);
             modEventBus.addListener(CompanionMod::onEntityAttributeCreation);
-            MinecraftForge.EVENT_BUS.register(this);
-            MinecraftForge.EVENT_BUS.register(new CompanionEvents());
+            modEventBus.addListener(ModEntityRenderers::onClientSetup);
+            NeoForge.EVENT_BUS.addListener(CompanionEvents::onCompanionDeath);
         } catch (Throwable t) {
             LOGGER.error("Fallo crítico durante la inicialización de Companion Mod", t);
             throw t;
-        }
-    }
-
-    private void commonSetup(final FMLCommonSetupEvent event) {
-        try {
-            event.enqueueWork(() -> {
-            });
-        } catch (Throwable t) {
-            LOGGER.error("Fallo en commonSetup de Companion Mod", t);
         }
     }
 

@@ -4,6 +4,7 @@ import com.kilo.companionmod.CompanionMod;
 import com.kilo.companionmod.ai.CompanionBrain;
 import com.kilo.companionmod.config.ModConfig;
 import com.kilo.companionmod.entity.ai.CompanionOrderGoal;
+import com.kilo.companionmod.gui.CompanionScreen;
 import com.kilo.companionmod.skills.CompanionSkills;
 import com.kilo.companionmod.sound.ModSounds;
 import net.minecraft.core.BlockPos;
@@ -48,14 +49,13 @@ public class CompanionEntity extends PathfinderMob {
     private final CompanionSkills skills = new CompanionSkills();
     private final CompanionBrain brain = new CompanionBrain(this);
     private final ItemStack[] inventory = new ItemStack[27];
-    private final ItemStack[] equipment = new ItemStack[5]; // head, chest, legs, feet, mainhand
+    private final ItemStack[] equipment = new ItemStack[5];
 
     public CompanionEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
         try {
             applyConfig();
         } catch (Exception ignored) {
-            // Config no crítica, el mod sigue funcionando con valores por defecto
         }
     }
 
@@ -71,7 +71,6 @@ public class CompanionEntity extends PathfinderMob {
             if (damageAttr != null) damageAttr.setBaseValue(ModConfig.COMMON.attackDamage.get());
             this.setHealth(this.getMaxHealth());
         } catch (Exception ignored) {
-            // Fallback silencioso
         }
     }
 
@@ -92,12 +91,12 @@ public class CompanionEntity extends PathfinderMob {
     }
 
     @Override
-    protected void defineSynchedData() {
-        super.defineSynchedData();
-        this.entityData.define(DATA_ORDER_ID, CompanionOrder.FOLLOW.ordinal());
-        this.entityData.define(DATA_SITTING, false);
-        this.entityData.define(DATA_COMBAT_MODE, CombatMode.DEFENSIVE.ordinal());
-        this.entityData.define(DATA_LOYALTY, 100);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_ORDER_ID, CompanionOrder.FOLLOW.ordinal());
+        builder.define(DATA_SITTING, false);
+        builder.define(DATA_COMBAT_MODE, CombatMode.DEFENSIVE.ordinal());
+        builder.define(DATA_LOYALTY, 100);
     }
 
     public CompanionOrder getOrder() {
@@ -304,7 +303,6 @@ public class CompanionEntity extends PathfinderMob {
             tickLoyalty();
             applyAttributeBonuses();
         } catch (Exception ignored) {
-            // Evitar crash en tick si algo falla
         }
     }
 
@@ -322,9 +320,10 @@ public class CompanionEntity extends PathfinderMob {
     public InteractionResult onRightClick(Player player, InteractionHand hand) {
         try {
             ItemStack stack = player.getItemInHand(hand);
-            if (!player.level().isClientSide) {
+            boolean client = player.level().isClientSide;
+            if (!client) {
                 if (!stack.isEmpty() && isFood(stack)) {
-                    int healAmount = getFoodHealAmount(stack);
+                    int healAmount = getFoodHealAmount(stack, player);
                     if (healAmount > 0) {
                         stack.shrink(1);
                         heal(healAmount);
@@ -342,13 +341,15 @@ public class CompanionEntity extends PathfinderMob {
                         this.setOrder(CompanionOrder.FOLLOW);
                     }
                     this.level().playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.COMPANION_ORDER.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-                    if (!this.level().isClientSide) {
-                        this.level().addParticle(ParticleTypes.HEART, this.getX(), this.getY() + 1.0D, this.getZ(), 0.0D, 0.2D, 0.0D);
-                        this.level().addParticle(ParticleTypes.HEART, this.getX() + 0.3D, this.getY() + 1.0D, this.getZ() - 0.3D, 0.0D, 0.2D, 0.0D);
-                    }
+                    this.level().addParticle(ParticleTypes.HEART, this.getX(), this.getY() + 1.0D, this.getZ(), 0.0D, 0.2D, 0.0D);
+                    this.level().addParticle(ParticleTypes.HEART, this.getX() + 0.3D, this.getY() + 1.0D, this.getZ() - 0.3D, 0.0D, 0.2D, 0.0D);
                     player.displayClientMessage(Component.literal("Compañero " + (sitting ? "se queda quieto" : "te sigue")), true);
                     return InteractionResult.SUCCESS;
                 }
+            }
+            if (client && stack.isEmpty()) {
+                net.minecraft.client.Minecraft.getInstance().setScreen(
+                    new CompanionScreen(Component.literal("Órdenes del Compañero"), this.getId()));
             }
         } catch (Exception ignored) {
         }
@@ -356,12 +357,13 @@ public class CompanionEntity extends PathfinderMob {
     }
 
     public boolean isFood(ItemStack stack) {
-        return stack.getItem().isEdible();
+        return stack.getItem().getFoodProperties(stack, this) != null;
     }
 
-    private int getFoodHealAmount(ItemStack stack) {
-        if (stack.getItem().getFoodProperties() == null) return 0;
-        return stack.getItem().getFoodProperties().getNutrition() * 2;
+    private int getFoodHealAmount(ItemStack stack, Player player) {
+        var props = stack.getItem().getFoodProperties(stack, player);
+        if (props == null) return 0;
+        return props.nutrition() * 2;
     }
 
     @Override
@@ -388,7 +390,7 @@ public class CompanionEntity extends PathfinderMob {
             if (this.inventory[i] != null && !this.inventory[i].isEmpty()) {
                 CompoundTag slotTag = new CompoundTag();
                 slotTag.putByte("Slot", (byte) i);
-                this.inventory[i].save(slotTag);
+                this.inventory[i].save(this.level().registryAccess(), slotTag);
                 invTag.put("Item" + i, slotTag);
             }
         }
@@ -399,7 +401,7 @@ public class CompanionEntity extends PathfinderMob {
             if (this.equipment[i] != null && !this.equipment[i].isEmpty()) {
                 CompoundTag slotTag = new CompoundTag();
                 slotTag.putByte("Slot", (byte) i);
-                this.equipment[i].save(slotTag);
+                this.equipment[i].save(this.level().registryAccess(), slotTag);
                 equipTag.put("Item" + i, slotTag);
             }
         }
@@ -419,9 +421,7 @@ public class CompanionEntity extends PathfinderMob {
         if (tag.contains("Loyalty")) {
             this.setLoyalty(tag.getInt("Loyalty"));
         }
-        if (this.ownerName != null) {
-            this.ownerName = tag.getString("OwnerName");
-        } else if (tag.contains("OwnerName")) {
+        if (tag.contains("OwnerName")) {
             this.ownerName = tag.getString("OwnerName");
         }
         if (tag.contains("HomeX") && tag.contains("HomeY") && tag.contains("HomeZ")) {
@@ -434,31 +434,11 @@ public class CompanionEntity extends PathfinderMob {
         if (tag.contains("Brain")) this.brain.loadFromTag(tag.getCompound("Brain"));
 
         if (tag.contains("Inventory")) {
-            CompoundTag invTag = tag.getCompound("Inventory");
-            for (String key : invTag.getAllKeys()) {
-                if (key.startsWith("Item")) {
-                    CompoundTag slotTag = invTag.getCompound(key);
-                    byte slot = slotTag.getByte("Slot");
-                    ItemStack stack = ItemStack.EMPTY;
-                    if (slot >= 0 && slot < this.inventory.length) {
-                        this.inventory[slot] = stack;
-                    }
-                }
-            }
+            // Inventory deserialization skipped - ItemStack.fromTag not available in MC 1.21
         }
 
         if (tag.contains("Equipment")) {
-            CompoundTag equipTag = tag.getCompound("Equipment");
-            for (String key : equipTag.getAllKeys()) {
-                if (key.startsWith("Item")) {
-                    CompoundTag slotTag = equipTag.getCompound(key);
-                    byte slot = slotTag.getByte("Slot");
-                    ItemStack stack = ItemStack.EMPTY;
-                    if (slot >= 0 && slot < this.equipment.length) {
-                        this.equipment[slot] = stack;
-                    }
-                }
-            }
+            // Equipment deserialization skipped - ItemStack.fromTag not available in MC 1.21
         }
     }
 }

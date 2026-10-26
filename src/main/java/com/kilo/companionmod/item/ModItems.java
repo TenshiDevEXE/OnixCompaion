@@ -2,6 +2,7 @@ package com.kilo.companionmod.item;
 
 import com.kilo.companionmod.CompanionMod;
 import com.kilo.companionmod.ModEntities;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionResult;
@@ -13,17 +14,16 @@ import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.function.Supplier;
 
 public class ModItems {
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, CompanionMod.MOD_ID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, CompanionMod.MOD_ID);
 
-    public static final RegistryObject<Item> COMPANION_SPAWN_EGG = ITEMS.register("companion_spawn_egg",
+    public static final DeferredHolder<Item, Item> COMPANION_SPAWN_EGG = ITEMS.register("companion_spawn_egg",
         () -> new CompanionSpawnEggItem(ModEntities.COMPANION::get, 0xFFFFFF, 0xFFFFFF, new Item.Properties())
     );
 
@@ -35,20 +35,13 @@ public class ModItems {
         private final Supplier<EntityType<?>> entityTypeSupplier;
 
         public CompanionSpawnEggItem(Supplier<EntityType<?>> entityTypeSupplier, int color1, int color2, Item.Properties properties) {
-            super(null, color1, color2, properties);
+            super(EntityType.ZOMBIE, color1, color2, properties);
             this.entityTypeSupplier = entityTypeSupplier;
         }
 
-        @Override
-        public EntityType<?> getDefaultType() {
+        public EntityType<?> getType(ItemStack stack) {
             EntityType<?> type = entityTypeSupplier.get();
-            return type != null ? type : EntityType.PLAYER;
-        }
-
-        @Override
-        public EntityType<?> getType(CompoundTag tag) {
-            EntityType<?> type = entityTypeSupplier.get();
-            return type != null ? type : super.getType(tag);
+            return type != null ? type : super.getType(stack);
         }
     }
 }

@@ -1,6 +1,6 @@
 {
   "textures": {
-    "0": "companionmod:entity/companion"
+    "0": "onixcompanion:entity/companion"
   },
   "elements": [
     {

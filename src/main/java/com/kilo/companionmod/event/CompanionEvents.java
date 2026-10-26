@@ -1,18 +1,14 @@
 package com.kilo.companionmod.event;
 
-import com.kilo.companionmod.ModEntities;
 import com.kilo.companionmod.entity.CompanionEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 
-@EventBusSubscriber(modid = "companionmod", bus = EventBusSubscriber.Bus.FORGE)
 public class CompanionEvents {
 
     @SubscribeEvent
@@ -22,7 +18,6 @@ public class CompanionEvents {
 
         CompanionEntity companion = (CompanionEntity) entity;
 
-        // Droppear inventario
         try {
             for (ItemStack stack : companion.getInventory()) {
                 if (stack != null && !stack.isEmpty()) {
@@ -32,7 +27,6 @@ public class CompanionEvents {
         } catch (Exception ignored) {
         }
 
-        // Droppear equipamiento
         try {
             for (ItemStack stack : companion.getEquipment()) {
                 if (stack != null && !stack.isEmpty()) {
@@ -42,7 +36,6 @@ public class CompanionEvents {
         } catch (Exception ignored) {
         }
 
-        // Respawn en spawn point del mundo
         var level = entity.level();
         if (!(level instanceof ServerLevel serverLevel)) return;
 
@@ -55,7 +48,7 @@ public class CompanionEvents {
 
     private static void respawnCompanion(ServerLevel level, BlockPos spawnPos, CompoundTag tag) {
         try {
-            EntityType<? extends CompanionEntity> type = ModEntities.COMPANION.get();
+            var type = com.kilo.companionmod.ModEntities.COMPANION.get();
             CompanionEntity newCompanion = type.create(level);
             if (newCompanion == null) return;
 

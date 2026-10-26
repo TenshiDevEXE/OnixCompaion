@@ -74,11 +74,9 @@ public class CompanionSkills {
 
     public CompoundTag saveToTag() {
         CompoundTag tag = new CompoundTag();
-        CompoundTag skillsTag = new CompoundTag();
         for (Map.Entry<CompanionSkillType, CompanionSkill> entry : skills.entrySet()) {
-            skillsTag.put(entry.getKey().name(), entry.getValue().saveToTag());
+            tag.put(entry.getKey().name(), entry.getValue().saveToTag());
         }
-        tag.put("Skills", skillsTag);
         return tag;
     }
 

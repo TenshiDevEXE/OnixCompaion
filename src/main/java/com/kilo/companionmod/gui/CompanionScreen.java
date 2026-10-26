@@ -1,14 +1,20 @@
 package com.kilo.companionmod.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.kilo.companionmod.entity.CompanionOrder;
+import com.kilo.companionmod.entity.CombatMode;
+import com.kilo.companionmod.network.CompanionOrderPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 
 public class CompanionScreen extends Screen {
-    public CompanionScreen(Component title) {
+    private final int entityId;
+
+    public CompanionScreen(Component title, int entityId) {
         super(title);
+        this.entityId = entityId;
     }
 
     @Override
@@ -16,52 +22,38 @@ public class CompanionScreen extends Screen {
         int centerX = this.width / 2;
         int centerY = this.height / 2;
 
-        this.addRenderableWidget(Button.builder(Component.literal("Seguir"), b -> {
-            if (this.minecraft.player != null) {
-                this.minecraft.player.displayClientMessage(Component.literal("Orden: Seguir"), true);
-                this.onClose();
-            }
-        }).bounds(centerX - 100, centerY - 60, 200, 20).build());
+        addOrderButton(centerX, centerY - 60, "Seguir", CompanionOrder.FOLLOW, -1);
+        addOrderButton(centerX, centerY - 35, "Quedarse", CompanionOrder.STAY, -1);
+        addOrderButton(centerX, centerY - 10, "Vagar", CompanionOrder.WANDER, -1);
+        addOrderButton(centerX, centerY + 15, "Patrullar", CompanionOrder.PATROL, -1);
+        addCombatButton(centerX, centerY + 45, "Combate: Pasivo", CombatMode.PASSIVE);
+        addCombatButton(centerX, centerY + 70, "Combate: Defensivo", CombatMode.DEFENSIVE);
+        addCombatButton(centerX, centerY + 95, "Combate: Agresivo", CombatMode.AGGRESSIVE);
+    }
 
-        this.addRenderableWidget(Button.builder(Component.literal("Quedarse"), b -> {
+    private void addOrderButton(int centerX, int y, String label, CompanionOrder order, int combatMode) {
+        this.addRenderableWidget(Button.builder(Component.literal(label), b -> {
             if (this.minecraft.player != null) {
-                this.minecraft.player.displayClientMessage(Component.literal("Orden: Quedarse"), true);
+                this.minecraft.player.connection.send(new ServerboundCustomPayloadPacket(new CompanionOrderPacket(entityId, order.ordinal(), combatMode)));
+                this.minecraft.player.displayClientMessage(Component.literal("Orden: " + label), true);
                 this.onClose();
             }
-        }).bounds(centerX - 100, centerY - 35, 200, 20).build());
+        }).bounds(centerX - 100, y, 200, 20).build());
+    }
 
-        this.addRenderableWidget(Button.builder(Component.literal("Vagar"), b -> {
+    private void addCombatButton(int centerX, int y, String label, CombatMode mode) {
+        this.addRenderableWidget(Button.builder(Component.literal(label), b -> {
             if (this.minecraft.player != null) {
-                this.minecraft.player.displayClientMessage(Component.literal("Orden: Vagar"), true);
+                this.minecraft.player.connection.send(new ServerboundCustomPayloadPacket(new CompanionOrderPacket(entityId, -1, mode.ordinal())));
+                this.minecraft.player.displayClientMessage(Component.literal(label), true);
                 this.onClose();
             }
-        }).bounds(centerX - 100, centerY - 10, 200, 20).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Combate: Pasivo"), b -> {
-            if (this.minecraft.player != null) {
-                this.minecraft.player.displayClientMessage(Component.literal("Modo: Pasivo"), true);
-                this.onClose();
-            }
-        }).bounds(centerX - 100, centerY + 15, 200, 20).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Combate: Defensivo"), b -> {
-            if (this.minecraft.player != null) {
-                this.minecraft.player.displayClientMessage(Component.literal("Modo: Defensivo"), true);
-                this.onClose();
-            }
-        }).bounds(centerX - 100, centerY + 40, 200, 20).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Combate: Agresivo"), b -> {
-            if (this.minecraft.player != null) {
-                this.minecraft.player.displayClientMessage(Component.literal("Modo: Agresivo"), true);
-                this.onClose();
-            }
-        }).bounds(centerX - 100, centerY + 65, 200, 20).build());
+        }).bounds(centerX - 100, y, 200, 20).build());
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 80, 0xFFFFFF);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
