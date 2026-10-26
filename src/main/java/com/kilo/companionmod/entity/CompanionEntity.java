@@ -434,11 +434,31 @@ public class CompanionEntity extends PathfinderMob {
         if (tag.contains("Brain")) this.brain.loadFromTag(tag.getCompound("Brain"));
 
         if (tag.contains("Inventory")) {
-            // Inventory deserialization skipped - ItemStack.fromTag not available in MC 1.21
+            CompoundTag invTag = tag.getCompound("Inventory");
+            for (String key : invTag.getAllKeys()) {
+                if (key.startsWith("Item")) {
+                    CompoundTag slotTag = invTag.getCompound(key);
+                    byte slot = slotTag.getByte("Slot");
+                    ItemStack stack = ItemStack.parse(this.level().registryAccess(), slotTag).orElse(ItemStack.EMPTY);
+                    if (slot >= 0 && slot < this.inventory.length) {
+                        this.inventory[slot] = stack;
+                    }
+                }
+            }
         }
 
         if (tag.contains("Equipment")) {
-            // Equipment deserialization skipped - ItemStack.fromTag not available in MC 1.21
+            CompoundTag equipTag = tag.getCompound("Equipment");
+            for (String key : equipTag.getAllKeys()) {
+                if (key.startsWith("Item")) {
+                    CompoundTag slotTag = equipTag.getCompound(key);
+                    byte slot = slotTag.getByte("Slot");
+                    ItemStack stack = ItemStack.parse(this.level().registryAccess(), slotTag).orElse(ItemStack.EMPTY);
+                    if (slot >= 0 && slot < this.equipment.length) {
+                        this.equipment[slot] = stack;
+                    }
+                }
+            }
         }
     }
 }
