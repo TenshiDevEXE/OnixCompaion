@@ -1,4 +1,4 @@
-# OrixCompanion
+# OrinCompanion
 
 Mod Forge para Minecraft 1.20.1 que añade un compañero NPC persistente, controlable por el jugador, con órdenes de combate, seguimiento, inventario, habilidades y un sistema de aprendizaje adaptativo (machine learning ligero).
 
