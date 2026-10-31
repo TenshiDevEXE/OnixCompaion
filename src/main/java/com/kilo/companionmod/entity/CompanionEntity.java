@@ -14,6 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -50,6 +51,9 @@ public class CompanionEntity extends PathfinderMob {
     private final CompanionBrain brain = new CompanionBrain(this);
     private final ItemStack[] inventory = new ItemStack[27];
     private final ItemStack[] equipment = new ItemStack[5];
+
+    @Nullable
+    private String ownerName;
 
     public CompanionEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
@@ -143,9 +147,6 @@ public class CompanionEntity extends PathfinderMob {
     public void setOwnerName(String name) {
         this.ownerName = name;
     }
-
-    @Nullable
-    private String ownerName;
 
     public BlockPos getHomePosition() {
         return this.homePosition;
@@ -302,6 +303,8 @@ public class CompanionEntity extends PathfinderMob {
             super.tick();
             tickLoyalty();
             applyAttributeBonuses();
+            // FIX #5: conectar el tick del Brain para que la memoria funcione
+            this.brain.tick();
         } catch (Exception ignored) {
         }
     }
@@ -317,43 +320,62 @@ public class CompanionEntity extends PathfinderMob {
         }
     }
 
-    public InteractionResult onRightClick(Player player, InteractionHand hand) {
+    // FIX #2: renombramos onRightClick -> mobInteract con @Override para que Minecraft lo invoque
+    // FIX #8: separamos lógica — clic normal abre GUI, Sneak+clic alterna sit/follow
+    @Override
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
         try {
             ItemStack stack = player.getItemInHand(hand);
-            boolean client = player.level().isClientSide;
-            if (!client) {
+            boolean isClient = player.level().isClientSide;
+
+            // --- SERVIDOR ---
+            if (!isClient) {
+                // Alimentar al compañero con comida
                 if (!stack.isEmpty() && isFood(stack)) {
                     int healAmount = getFoodHealAmount(stack, player);
                     if (healAmount > 0) {
                         stack.shrink(1);
                         heal(healAmount);
-                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.COMPANION_ORDER.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-                        player.displayClientMessage(Component.literal("Compañero curado " + healAmount + " PV"), true);
+                        if (ModConfig.COMMON.soundsEnabled.get()) {
+                            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                                ModSounds.COMPANION_ORDER.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
+                        }
+                        player.displayClientMessage(
+                            Component.literal("Compañero curado " + healAmount + " PV"), true);
                         return InteractionResult.SUCCESS;
                     }
                 }
-                if (stack.isEmpty()) {
+
+                // Sneak + clic vacío: alternar sit/follow
+                if (stack.isEmpty() && player.isShiftKeyDown()) {
                     boolean sitting = !this.isSitting();
                     this.setSitting(sitting);
-                    if (sitting) {
-                        this.setOrder(CompanionOrder.STAY);
-                    } else {
-                        this.setOrder(CompanionOrder.FOLLOW);
+                    this.setOrder(sitting ? CompanionOrder.STAY : CompanionOrder.FOLLOW);
+                    if (ModConfig.COMMON.soundsEnabled.get()) {
+                        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                            ModSounds.COMPANION_ORDER.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
                     }
-                    this.level().playSound(null, this.getX(), this.getY(), this.getZ(), ModSounds.COMPANION_ORDER.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-                    this.level().addParticle(ParticleTypes.HEART, this.getX(), this.getY() + 1.0D, this.getZ(), 0.0D, 0.2D, 0.0D);
-                    this.level().addParticle(ParticleTypes.HEART, this.getX() + 0.3D, this.getY() + 1.0D, this.getZ() - 0.3D, 0.0D, 0.2D, 0.0D);
-                    player.displayClientMessage(Component.literal("Compañero " + (sitting ? "se queda quieto" : "te sigue")), true);
+                    // FIX #9: partículas deben emitirse desde ServerLevel con sendParticles
+                    if (this.level() instanceof ServerLevel serverLevel) {
+                        serverLevel.sendParticles(ParticleTypes.HEART,
+                            this.getX(), this.getY() + 1.0D, this.getZ(),
+                            3, 0.3D, 0.2D, 0.3D, 0.05D);
+                    }
+                    player.displayClientMessage(
+                        Component.literal("Compañero " + (sitting ? "se queda quieto" : "te sigue")), true);
                     return InteractionResult.SUCCESS;
                 }
             }
-            if (client && stack.isEmpty()) {
+
+            // --- CLIENTE: clic vacío sin Sneak → abrir GUI de órdenes ---
+            if (isClient && stack.isEmpty() && !player.isShiftKeyDown()) {
                 net.minecraft.client.Minecraft.getInstance().setScreen(
                     new CompanionScreen(Component.literal("Órdenes del Compañero"), this.getId()));
             }
+
         } catch (Exception ignored) {
         }
-        return super.mobInteract(player, hand);
+        return InteractionResult.PASS;
     }
 
     public boolean isFood(ItemStack stack) {
@@ -412,11 +434,17 @@ public class CompanionEntity extends PathfinderMob {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         if (tag.contains("Order")) {
-            this.setOrder(CompanionOrder.values()[tag.getInt("Order")]);
+            int ordinal = tag.getInt("Order");
+            if (ordinal >= 0 && ordinal < CompanionOrder.values().length) {
+                this.setOrder(CompanionOrder.values()[ordinal]);
+            }
         }
         this.setSitting(tag.getBoolean("Sitting"));
         if (tag.contains("CombatMode")) {
-            this.setCombatMode(CombatMode.values()[tag.getInt("CombatMode")]);
+            int ordinal = tag.getInt("CombatMode");
+            if (ordinal >= 0 && ordinal < CombatMode.values().length) {
+                this.setCombatMode(CombatMode.values()[ordinal]);
+            }
         }
         if (tag.contains("Loyalty")) {
             this.setLoyalty(tag.getInt("Loyalty"));

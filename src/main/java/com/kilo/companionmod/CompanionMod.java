@@ -26,7 +26,7 @@ public class CompanionMod {
             ModEntities.ENTITIES.register(modEventBus);
             ModItems.ITEMS.register(modEventBus);
             ModSounds.SOUND_EVENTS.register(modEventBus);
-            ModConfig.register(modEventBus);
+            ModConfig.register();
             ModNetwork.register(modEventBus);
             modEventBus.addListener(CompanionMod::onEntityAttributeCreation);
             modEventBus.addListener(ModEntityRenderers::onClientSetup);

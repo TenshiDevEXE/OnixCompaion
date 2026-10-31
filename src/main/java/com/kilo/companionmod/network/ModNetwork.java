@@ -27,8 +27,9 @@ public class ModNetwork {
         modEventBus.addListener(ModNetwork::onRegisterPayloadHandlers);
     }
 
+    // FIX #3: registrar() debe recibir un string de versión del protocolo, no el ResourceLocation del payload
     private static void onRegisterPayloadHandlers(RegisterPayloadHandlersEvent event) {
-        event.registrar(CompanionOrderPacket.ID.toString())
+        event.registrar(CompanionMod.MOD_ID)
             .playBidirectional(
                 CompanionOrderPacket.TYPE,
                 COMPANION_ORDER_CODEC,

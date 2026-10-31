@@ -1,7 +1,6 @@
 package com.kilo.companionmod.config;
 
 import com.kilo.companionmod.CompanionMod;
-import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -45,6 +44,6 @@ public class ModConfig {
         }
     }
 
-    public static void register(IEventBus modEventBus) {
+    public static void register() {
     }
 }
