@@ -24,8 +24,16 @@ Mod para Minecraft con un compañero NPC persistente, controlable por el jugador
 
 1. Instala [NeoForge 1.21.0 (21.0.167)](https://neoforged.net/).
 2. Descarga el JAR más reciente desde la pestaña **Releases** de este repositorio.
-3. Coloca el archivo `onixcompanion-2.0.1.jar` en la carpeta `mods` de tu instancia de Minecraft.
+3. Coloca el archivo `onixcompanion-2.0.2.jar` en la carpeta `mods` de tu instancia de Minecraft.
 4. Inicia Minecraft con el perfil de NeoForge.
+
+### Solución si el mod no carga (error "Mod File: NO FILE INFO")
+
+Si ves un error que dice "Mod File: NO FILE INFO" o "Mod Version: NO MOD INFO AVAILABLE":
+
+1. Verifica que el archivo JAR esté en `mods/onixcompanion-2.0.2.jar`
+2. Asegúrate de que no haya otros archivos del mod en la carpeta mods (elimina versiones anteriores)
+3. Si el problema persiste, descarga el JAR directamente desde GitHub y renómbralo a `onixcompanion-2.0.2.jar`
 
 ## Uso
 
