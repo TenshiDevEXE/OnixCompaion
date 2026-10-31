@@ -5,7 +5,7 @@ issueTrackerURL=""
 
 [[mods]]
 modId="onixcompanion"
-version="2.0.1"
+version="2.0.2"
 displayName="Onix Companion"
 description='''
 Un compañero NPC persistente para NeoForge 1.21.0 con órdenes de combate, habilidades, inventario y más.
