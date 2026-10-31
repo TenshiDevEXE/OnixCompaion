@@ -1,15 +1,14 @@
 # OnixCompanion
 
-Mod Forge para Minecraft 1.20.1 que añade un compañero NPC persistente, controlable por el jugador, con órdenes de combate, seguimiento, inventario, habilidades y un sistema de aprendizaje adaptativo (machine learning ligero).
+Mod para Minecraft con un compañero NPC persistente, controlable por el jugador, con órdenes de combate, seguimiento, inventario, habilidades y sistema de aprendizaje adaptativo.
 
 ## Características
 
 - **Compañero NPC** — Entidad persistente que te sigue y guarda su estado (posición, inventario, XP, lealtad) entre sesiones.
-- **Órdenes** — Seguir, quedarse, vagar dentro de una zona hogar, y modos de combate (Pasivo / Defensivo / Agresivo).
+- **Órdenes** — Seguir, quedarse, vagar dentro de una zona hogar, teletransporte de seguridad y modos de combate (Pasivo / Defensivo / Agresivo).
 - **Huevo de spawn** — Textura y modelo personalizados para invocar al compañero.
 - **Sonidos y partículas** — Retroalimentación audiovisual al cambiar órdenes.
 - **GUI de órdenes** — Abre una pantalla con botones para cada orden y modo de combate.
-- **Teleport de seguridad** — Si se aleja demasiado o el pathfinding falla, se teletransporta junto a ti.
 - **Sistema de lealtad** — Sube o baja según cómo lo trates; afecta su obediencia.
 - **Comportamiento día/noche** — Más lento y menos activo durante la noche.
 - **Inventario y equipamiento** — 27 slots de inventario y slots de armadura + arma en mano.
@@ -18,15 +17,15 @@ Mod Forge para Minecraft 1.20.1 que añade un compañero NPC persistente, contro
 - **Machine Learning (comportamiento adaptativo)** — El compañero aprende de sus acciones con un sistema de pesos por acción, recompensa/penalización (EMA) y exploración epsilon-greedy. Mejora con el tiempo según lo que hagas.
 - **Memoria de zonas** — Recuerda zonas visitadas, recursos encontrados y rutas exitosas (caché LRU persistente en NBT).
 - **Muerte y respawn** — Al morir, droppea inventario y equipamiento; respawn en el spawn point del mundo tras 30 segundos.
-- **Configuración (Forge Config)** — `companionmod-common.toml`: distancia de seguimiento, vida, daño, velocidad, teleport, cap de nivel, sonidos, etc.
+- **Configuración (NeoForge Config)** — `companionmod-common.toml`: distancia de seguimiento, vida, daño, velocidad, teleport, cap de nivel, sonidos, etc.
 - **Localización** — Idiomas: inglés (`en_us.json`) y español (`es_es.json`).
 
 ## Instalación
 
-1. Instala [Minecraft Forge 1.20.1 (47.2.0)](https://files.minecraftforge.net/).
+1. Instala [NeoForge 1.21.0 (21.0.167)](https://neoforged.net/).
 2. Descarga el JAR más reciente desde la pestaña **Releases** de este repositorio.
-3. Coloca el archivo `companion-mod-1.0.0.jar` en la carpeta `mods` de tu instancia de Minecraft.
-4. Inicia Minecraft con el perfil de Forge.
+3. Coloca el archivo `onixcompanion-2.0.1.jar` en la carpeta `mods` de tu instancia de Minecraft.
+4. Inicia Minecraft con el perfil de NeoForge.
 
 ## Uso
 
@@ -39,19 +38,19 @@ Mod Forge para Minecraft 1.20.1 que añade un compañero NPC persistente, contro
 ## Construcción desde el código fuente
 
 Requisitos:
-- JDK 17
-- Gradle 8.8 (incluido como wrapper)
+- JDK 21
+- Gradle 9.0 (incluido como wrapper)
 
 ```bash
 .\gradlew.bat build
 ```
 
-El JAR resultante se genera en `build\libs\companion-mod-1.0.0.jar`.
+El JAR resultante se genera en `build\libs\onixcompanion-2.0.1.jar`.
 
 ## Estructura del proyecto
 
 ```
-companion-mod/
+onixcompanion/
 ├── build.gradle
 ├── settings.gradle
 ├── gradlew / gradlew.bat
@@ -71,15 +70,15 @@ companion-mod/
         │   │   ├── CompanionEntity.java
         │   │   ├── CompanionOrder.java
         │   │   ├── CombatMode.java
-        │   │   └── ai/
-        │   │       └── CompanionOrderGoal.java
+        │   │   ├── ai/
+        │   │   │   └── CompanionOrderGoal.java
         │   ├── ai/CompanionBrain.java
         │   ├── skills/CompanionSkills.java
         │   ├── event/CompanionEvents.java
         │   ├── gui/CompanionScreen.java
         │   └── sound/ModSounds.java
         └── resources/
-            ├── META-INF/mods.toml
+            ├── META-INF/neoforge.mods.toml
             └── assets/companionmod/
                 ├── lang/en_us.json
                 ├── lang/es_es.json
@@ -97,9 +96,17 @@ Este proyecto está bajo la licencia **MIT**. Ver el archivo `LICENSE` para más
 
 ## Historial de versiones
 
+### 2.0.1 (2026-10-31)
+- **Migración a NeoForge 1.21.0**
+- Actualizado a Java 21, Gradle 9.0, ModDevGradle 2.0.148
+- Networking: SimpleChannel → CustomPacketPayload + StreamCodec
+- Configuración: ForgeConfigSpec → ModConfigSpec
+- Entidades actualizadas a API de MC 1.21
+- Inventario persistente con carga NBT desde ItemStack.parse()
+
 ### 1.0.0 (2026-10-25)
 - Lanzamiento inicial
-- Compañero NPC con órdenes de seguir/quedarse/vagar
+- Compañero NPC con órdenes de seguir/quedarse/vander/caminar
 - Modos de combate: Pasivo, Defensivo, Agresivo
 - Huevo de spawn con textura y modelo personalizados
 - Sistema de habilidades (Combate, Minería, Supervivencia, Recolección)
